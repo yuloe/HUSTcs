@@ -1,6 +1,8 @@
 #include "dpll.c"
 #include "read.c"
 #include "write.c"
+#include <time.h>
+
 int check(CNF *cnf, variable *literalValue) {
   int flag = 1;
   clause *tempClause;
@@ -44,6 +46,8 @@ int output1(CNF *cnf) {
 }
 
 int main() {
+  time_t start_t,end_t;
+  start_t = clock();
   CNF theCnf;  //定义cnf范式;
   variable *literalValue;
   char *fileName;
@@ -52,8 +56,9 @@ int main() {
   addCNF(&theCnf, &literalValue);
   // outputCNF1(&theCnf);
   DPLL(&theCnf, literalValue);
-  write(&theCnf, literalValue, 1);
+  end_t = clock();
+  double total = (double)(end_t - start_t)/CLOCKS_PER_SEC;
+  write(&theCnf, literalValue, 1,total);
   check(&theCnf, literalValue);
-  getchar();
   return 0;
 }
