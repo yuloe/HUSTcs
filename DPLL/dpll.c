@@ -3,8 +3,6 @@
 /* 传入index,将cnf化简，并不负责判断是否出现冲突
  * 消去的子句中设置变量值表示已经消去忽略*/
 
-
-/* 接下来的两个函数应当合并来写，优化且！！！！！！ */
 int singleClauseRule(CNF *cnf, int indexValue, variable *literalValue, decideTree *tree) {
   int index = abs(indexValue);
   int value = indexValue > 0 ? 1 : 0;
@@ -64,7 +62,6 @@ int determineConflict(CNF *cnf, variable *literalValue, int indexValue, queue *c
           cla->satisfied = 0;
         } else {
           if (literalValue[cla->headb->index - 1].value == cla->headb->noLit) {
-            cla->satisfied = 0;  //保证统一
             return -1;
           }
         }

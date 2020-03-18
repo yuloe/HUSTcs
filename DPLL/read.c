@@ -25,7 +25,7 @@ int addclause(clause *clauseHead, variableState *variableInfo, variable *literal
   clauseNode->head = (literal *)malloc(sizeof(literal));
   clauseNode->head->prev = NULL;  //将双向链表的头的prev指针指向NULL
   clauseNode->tail = clauseNode->head;
-  clauseNode->literalNum = 0;
+  clauseNode->literalLearned = 0;
   clauseHead->next = clauseNode;  //将子句添加到链表
   while (scanf("%d", &num) >= 0) {
     if (num == 0) {
@@ -35,7 +35,6 @@ int addclause(clause *clauseHead, variableState *variableInfo, variable *literal
       return 0;
     } else {
       addliteral(num, clauseNode, variableInfo, literalValue);
-      clauseNode->literalNum++;
     }
   }
   clauseHead->next = NULL;
