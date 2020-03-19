@@ -73,7 +73,9 @@ int addCNF(CNF *cnf, variable **literalValue) {
     tempClause = cnf->clauseHead;
     while (addclause(tempClause, cnf->variableInfo, *literalValue) != -1) {
       tempClause = tempClause->next;
-    };
+    }
+    cnf->clauseLearnedHead = tempClause;
+    cnf->clauseLearnedTail = tempClause;
   }
   fclose(stdin);
   freopen("CON", "r", stdin);

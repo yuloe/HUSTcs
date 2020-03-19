@@ -15,7 +15,7 @@ typedef struct clause {
   literal *headb;//headb为链表真正的头
   literal *head;//以带头指针的链表的形式存储
   literal *tail;
-  int literalNum;//统计子句中有多少文字
+  int literalLearned;//该子句是否为学习子句，为第多少个学习子句
   struct clause *next;
 }clause;//子句
 
@@ -39,6 +39,19 @@ typedef struct CNF{
   int literalNum;
   int clauseNum;
   clause *clauseHead;//以带头指针链表的形式存储子句
+  clause *clauseLearnedHead;//带头指针的链表存学习子句
+  clause *clauseLearnedTail;
   variableState *variableInfo;
 }CNF;//cnf范式
+
+typedef struct graphNode{
+  int *literalLinked;
+  int decideNode;//是否为决策点，1表示是，0表示否
+  int linkedNum;//和它相关联的点的数目
+}graphNode;
+
+typedef struct graph{
+  graphNode *graphNode;
+  int literalNum;
+}graph;
 #endif
