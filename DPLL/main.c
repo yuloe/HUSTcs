@@ -54,8 +54,9 @@ int main() {
   queue que;
   que.num = 0;
   addCNF(&theCnf, &literalValue);
+  graph *gra = initGraph(theCnf.literalNum);
   // outputCNF1(&theCnf);
-  DPLL(&theCnf, literalValue);
+  DPLL(&theCnf, literalValue,gra);
   end_t = clock();
   double total = (double)(end_t - start_t)/CLOCKS_PER_SEC;
   write(&theCnf, literalValue, 1,total);

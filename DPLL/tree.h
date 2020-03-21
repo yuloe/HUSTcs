@@ -27,4 +27,11 @@ typedef struct decideTree{
   decideTreeNode* deicdeTreeTail;
 }decideTree;
 
+decideTree *initTreeHead();
+int newNode(decideTree *tree, int indexValue);
+int freeNode(decideTree *tree);
+int emptyQueue(queue *queueA);
+int enQueue(queue *queueA, int index);
+int deQueue(queue *queueA);
+
 #endif

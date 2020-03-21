@@ -44,14 +44,20 @@ typedef struct CNF{
   variableState *variableInfo;
 }CNF;//cnf范式
 
+typedef struct literalLinked{
+  int index;
+  struct literalLinked* next;
+}literalLinked;
+
 typedef struct graphNode{
-  int *literalLinked;
+  literalLinked *litLinkedHead;//不带头指针
+  literalLinked *litLinkedTail;
   int decideNode;//是否为决策点，1表示是，0表示否
-  int linkedNum;//和它相关联的点的数目
 }graphNode;
 
 typedef struct graph{
   graphNode *graphNode;
   int literalNum;
 }graph;
+
 #endif
