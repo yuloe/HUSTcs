@@ -1,6 +1,6 @@
 #include "basic.h"
-#include "tree.c"
 #include "optimization.c"
+#include "tree.c"
 /* 传入index,将cnf化简，并不负责判断是否出现冲突
  * 消去的子句中设置变量值表示已经消去忽略*/
 
@@ -167,6 +167,37 @@ int backTrack(CNF *cnf, decideTreeNode *tree, variable *literalValue) {
   return 0;
 }
 
+/* 非时序回溯 */
+int smartBackTrack(CNF *cnf, decideTree *tree, variable *literalValue,
+                   graph *gra) {
+  int index = tree->deicdeTreeTail->index;
+  queue clauseQue;
+  clauseQue.num = 0;
+  clauseLearn(gra, index, &clauseQue, literalValue);
+  decideTreeNode *treeNode = tree->decideTreeHead->next;
+  decideTreeNode *tempTreeNode;
+  queueNode *queNode = clauseQue.head;
+  while (queNode) {
+    tempTreeNode = treeNode;
+    while (tempTreeNode) {
+      if (tempTreeNode->index == queNode->index) {
+        treeNode = tempTreeNode;
+        break;
+      }
+      tempTreeNode = tempTreeNode->next;
+    }
+    queNode = queNode->next;
+  }
+  index = treeNode->index;  //找到回溯到哪一层
+  addClauseLearned(cnf, &clauseQue, literalValue);
+  treeNode = tree->deicdeTreeTail;
+  while (treeNode->index != index) {
+    backTrack(cnf, treeNode, literalValue);
+    freeNode(tree);
+    treeNode = tree->deicdeTreeTail;
+  }
+}
+
 /* 如果返回值为0，表示该cnf范式可满足 */
 int satisfactory(CNF *cnf) {
   clause *cla = cnf->clauseHead->next;
@@ -232,6 +263,7 @@ int DPLL(CNF *cnf, variable *literalValue, graph *gra) {
     } else if (flag == 0) {
       return 0;  //表示不可满足
     } else if (flag == -1) {
+      smartBackTrack(cnf, tree, literalValue, gra);
       treeNode = tree->deicdeTreeTail;
       while (treeNode->left != 1) {
         backTrack(cnf, treeNode, literalValue);
@@ -251,7 +283,7 @@ int DPLL(CNF *cnf, variable *literalValue, graph *gra) {
       continue;
     } else {
       indexValue = selectLiteral(cnf, literalValue);
-      updateGraph(gra,abs(indexValue),NULL);
+      updateGraph(gra, abs(indexValue), NULL);
       printGrapf(gra);
       newNode(tree, indexValue);
       continue;

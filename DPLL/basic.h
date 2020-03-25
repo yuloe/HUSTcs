@@ -15,7 +15,6 @@ typedef struct clause {
   literal *headb;//headb为链表真正的头
   literal *head;//以带头指针的链表的形式存储
   literal *tail;
-  int literalLearned;//该子句是否为学习子句，为第多少个学习子句
   struct clause *next;
 }clause;//子句
 

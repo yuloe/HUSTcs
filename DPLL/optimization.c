@@ -13,7 +13,7 @@ graph *initGraph(int literalNum) {
   graphA->graphNode = graph;
   graphA->literalNum = literalNum;
   return graphA;
-}//无错误
+}
 //生成以逆邻接矩阵方式存储的图，产生冲突时，从冲突节点开始遍历，将得到的最终顶点，可形成学习的子句
 //更新图的时候每有一个蕴含的节点，就需要更新图
 int updateGraph(graph *graph, int literalIndex, clause *clauseNode) {
@@ -27,21 +27,26 @@ int updateGraph(graph *graph, int literalIndex, clause *clauseNode) {
   }
   int i;
   while (lit) {
-    if (exactGraphNode->litLinkedHead == NULL) {
-      exactGraphNode->litLinkedHead = (int *)malloc(sizeof(literalLinked));
-      exactGraphNode->litLinkedHead->next = NULL;
-      exactGraphNode->litLinkedTail = exactGraphNode->litLinkedHead;
-    } else {
-      literalLinked *graNode = (literalLinked *)malloc(sizeof(literalLinked));
-      graNode->index = lit->index;
-      graNode->next = NULL;
-      exactGraphNode->litLinkedTail->next = graNode;
-      exactGraphNode->litLinkedTail = exactGraphNode->litLinkedTail->next;
+    if (lit->index != literalIndex) {
+      if (exactGraphNode->litLinkedHead == NULL) {
+        exactGraphNode->litLinkedHead =
+            (literalLinked *)malloc(sizeof(literalLinked));
+        exactGraphNode->litLinkedHead->index = lit->index;
+        exactGraphNode->litLinkedHead->next = NULL;
+        exactGraphNode->litLinkedTail = exactGraphNode->litLinkedHead;
+      } else {
+        literalLinked *graNode = (literalLinked *)malloc(sizeof(literalLinked));
+        graNode->index = lit->index;
+        graNode->next = NULL;
+        exactGraphNode->litLinkedTail->next = graNode;
+        exactGraphNode->litLinkedTail = exactGraphNode->litLinkedTail->next;
+      }
     }
     lit = lit->next;
   }
   return 0;
-}
+}  //仍未检查,大概率没有问题
+
 //生成学习子句
 int clauseLearn(graph *graphA, int index, queue *clauseQue,
                 variable *literalValue) {
@@ -58,8 +63,8 @@ int clauseLearn(graph *graphA, int index, queue *clauseQue,
   visited[index - 1] = 1;
   while (!emptyQueue(&que)) {
     indexA = deQueue(&que);
-    literalLinked *temp = impliedGraph[indexA-1].litLinkedHead;
-    while(temp) {
+    literalLinked *temp = impliedGraph[indexA - 1].litLinkedHead;
+    while (temp) {
       indexB = temp->index;
       if (!visited[indexB - 1]) {
         visited[indexB - 1] = 1;
@@ -71,7 +76,9 @@ int clauseLearn(graph *graphA, int index, queue *clauseQue,
       temp = temp->next;
     }
   }
-}
+  enQueue(clauseQue,0);
+  return 0;
+}  //仍未检查
 
 //添加学习子句，保证子句学习上限为200，当学习到的子句数目大于200时，删除部分子句
 int addClauseLearned(CNF *cnf, queue *que, variable *literalValue) {
@@ -95,7 +102,7 @@ int addClauseLearned(CNF *cnf, queue *que, variable *literalValue) {
   clauseNode->head = (literal *)malloc(sizeof(literal));
   clauseNode->head->prev = NULL;  //将双向链表的头的prev指针指向NULL
   clauseNode->tail = clauseNode->head;
-  clauseNode->literalLearned = 0;
+  clauseNode->satisfied = 1;
   cnf->clauseLearnedTail->next = clauseNode;  //将子句添加到链表
   cnf->clauseLearnedTail = clauseNode;
   while (num = deQueue(que)) {
@@ -110,24 +117,61 @@ int addClauseLearned(CNF *cnf, queue *que, variable *literalValue) {
   }
 }
 
-//非时序回溯，当当前节点指向right时，判断应回溯多少层
+//当决策树被回溯时，图也需要回溯，将
 int backTrackGraph(graph *gra, decideTreeNode *treeNode) {
-
-}
+  int i = 0;
+  int index = treeNode->index;
+  gra->graphNode[index - 1].decideNode = 0;  //释放决策点
+  queueNode *tempQueNode = treeNode->que->head;
+  while (tempQueNode) {
+    index = tempQueNode->index;
+    literalLinked *tempLitLinked =
+        gra->graphNode[index - 1].litLinkedHead;  //释放由该点蕴含的点
+    literalLinked *tofree;
+    while (tempLitLinked) {
+      tofree = tempLitLinked;
+      tempLitLinked = tempLitLinked->next;
+      free(tofree);
+    }  //释放完成
+    for (i = 0; i < gra->literalNum; i++) {
+      tempLitLinked = gra->graphNode[i].litLinkedHead;
+      if (tempLitLinked->index == index) {
+        gra->graphNode[i].litLinkedHead = tempLitLinked->next;
+        free(tempLitLinked);
+      } else {
+        while (tempLitLinked->next) {
+          if (tempLitLinked->next->index == index) {
+            tofree = tempLitLinked->next;
+            tempLitLinked->next = tempLitLinked->next->next;
+            free(tofree);
+            break;
+          }
+          tempLitLinked = tempLitLinked->next;
+        }
+      }
+    }
+    tempQueNode = tempQueNode->next;
+  }
+}  //仍未检查
 
 int printGrapf(graph *gra) {
   int i, j;
   for (i = 0; i < gra->literalNum; i++) {
-    if (gra->graphNode[i].linkedNum == 0) {
+    if (gra->graphNode[i].decideNode == 1) {
+      printf("%d:decideLiteral\n", i + 1);
+      continue;
+    }
+    if (gra->graphNode[i].litLinkedHead == NULL) {
       continue;
     } else {
       printf("%d:  ", i + 1);
       literalLinked *temp = gra->graphNode[i].litLinkedHead;
-      while(temp){
+      while (temp) {
         printf("%d ", temp->index);
         temp = temp->next;
       }
       printf("\n");
     }
   }
+  printf("\n");
 }

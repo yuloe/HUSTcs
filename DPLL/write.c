@@ -5,20 +5,24 @@
 // 满足时，每个变元的赋值序列，-1表示第一个变元1取假，2表示第二个变元取真，用空格分开，此处为示例。
 // t 17     以毫秒为单位的DPLL执行时间，可增加分支规则执行次数信息
 
-int write(CNF *cnf, variable *literalIndex, int satisfied,double total_t) {
+int write(CNF *cnf, variable *literalIndex, int satisfied, double total_t) {
   FILE *file = fopen("answer.res", "w+");
-  int i = 0;
-  for (i = 0; i < cnf->literalNum; i++) {
-    if (literalIndex[i].value != -1) {
-      if (literalIndex[i].value == 1) {
-        fprintf(file, "%d   ", i + 1);
+  if (satisfied) {
+    int i = 0;
+    for (i = 0; i < cnf->literalNum; i++) {
+      if (literalIndex[i].value != -1) {
+        if (literalIndex[i].value == 1) {
+          fprintf(file, "%d   ", i + 1);
+        } else {
+          fprintf(file, "%d   ", -i - 1);
+        }
       } else {
-        fprintf(file, "%d   ", -i - 1);
+        fprintf(file, "?%d   ", i + 1);
       }
-    } else {
-      fprintf(file, "?%d   ", i + 1);
     }
+  }else{
+    fprintf(file,"the cnf is unsatisfied\n");
   }
-  fprintf(file,"\n%lfms",total_t);
+  fprintf(file, "\n%lfms", total_t);
   return 0;
 }
