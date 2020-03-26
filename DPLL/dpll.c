@@ -3,7 +3,6 @@
 #include "tree.c"
 /* 传入index,将cnf化简，并不负责判断是否出现冲突
  * 消去的子句中设置变量值表示已经消去忽略*/
-
 int singleClauseRule(CNF *cnf, int indexValue, variable *literalValue,
                      decideTree *tree) {
   int index = abs(indexValue);
@@ -64,7 +63,6 @@ int determineConflict(CNF *cnf, variable *literalValue, int indexValue,
         if (literalValue[cla->headb->index - 1].value == -1) {
           //表示当前文字并未赋值，可蕴含得到结果
           updateGraph(gra, cla->headb->index, cla);
-          printGrapf(gra);
           literalValue[cla->headb->index - 1].value =
               cla->headb->noLit == 1 ? 0 : 1;
           enQueue(containValue, cla->headb->index);
@@ -72,7 +70,8 @@ int determineConflict(CNF *cnf, variable *literalValue, int indexValue,
           cla->satisfied = 0;
         } else {
           if (literalValue[cla->headb->index - 1].value == cla->headb->noLit) {
-            return -1;
+            updateGraph(gra,cla->headb->index,cla);
+            return -cla->headb->index;
           }
         }
       }
@@ -109,7 +108,7 @@ int selectLiteral(CNF *cnf, variable *literalValue) {
   return indexValue;
 }
 
-/* 回溯，传入回溯节点，只对单个节点进行回溯， */
+/* 回溯，传入回溯节点，只对单个节点进行回溯，回溯掉蕴含值，但是保留节点*/
 int backTrack(CNF *cnf, decideTreeNode *tree, variable *literalValue) {
   int restoreLiteral[tree->que->num + 1], num = tree->que->num, i;
   int flag = 0;
@@ -169,35 +168,35 @@ int backTrack(CNF *cnf, decideTreeNode *tree, variable *literalValue) {
 
 /* 非时序回溯 */
 int smartBackTrack(CNF *cnf, decideTree *tree, variable *literalValue,
-                   graph *gra) {
+                   graph *gra, int conflictLitIndex) {
   int index = tree->deicdeTreeTail->index;
   queue clauseQue;
   clauseQue.num = 0;
-  clauseLearn(gra, index, &clauseQue, literalValue);
-  decideTreeNode *treeNode = tree->decideTreeHead->next;
-  decideTreeNode *tempTreeNode;
-  queueNode *queNode = clauseQue.head;
-  while (queNode) {
-    tempTreeNode = treeNode;
-    while (tempTreeNode) {
-      if (tempTreeNode->index == queNode->index) {
-        treeNode = tempTreeNode;
-        break;
-      }
-      tempTreeNode = tempTreeNode->next;
-    }
-    queNode = queNode->next;
-  }
-  index = treeNode->index;  //找到回溯到哪一层
+  clauseLearn(gra, conflictLitIndex, &clauseQue, literalValue);
+  // decideTreeNode *treeNode = tree->decideTreeHead->next;
+  // decideTreeNode *tempTreeNode;
+  // queueNode *queNode = clauseQue.head;
+  // while (queNode) {
+  //   tempTreeNode = treeNode;
+  //   while (tempTreeNode != tree->deicdeTreeTail) {
+  //     if (tempTreeNode->index == abs(queNode->index)) {
+  //       treeNode = tempTreeNode;
+  //       break;
+  //     }
+  //     tempTreeNode = tempTreeNode->next;
+  //   }
+  //   queNode = queNode->next;
+  // }
+//  index = treeNode->index;  //找到回溯到哪一层
   addClauseLearned(cnf, &clauseQue, literalValue);
-  treeNode = tree->deicdeTreeTail;
-  while (treeNode->index != index) {
-    backTrack(cnf, treeNode, literalValue);
-    freeNode(tree);
-    treeNode = tree->deicdeTreeTail;
-  }
+  // treeNode = tree->deicdeTreeTail;
+  // while (treeNode->index != index) {
+  //   backTrackGraph(gra, treeNode,tree);
+  //   backTrack(cnf, treeNode, literalValue);
+  //   freeNode(tree);
+  //   treeNode = tree->deicdeTreeTail;
+  // }
 }
-
 /* 如果返回值为0，表示该cnf范式可满足 */
 int satisfactory(CNF *cnf) {
   clause *cla = cnf->clauseHead->next;
@@ -244,7 +243,7 @@ int DPLL(CNF *cnf, variable *literalValue, graph *gra) {
   int whetherSatisfied = 0;
   decideTree *tree = initTreeHead();
   decideTreeNode *treeNode;
-  int flag = 2, indexValue;
+  int flag = 2, indexValue, conflictLitIndex;
   queue que;
   que.num = 0;
 
@@ -253,6 +252,7 @@ int DPLL(CNF *cnf, variable *literalValue, graph *gra) {
   newNode(tree, indexValue);
   while (flag != 1 && flag != 0) {
     flag = BCP(cnf, literalValue, tree, indexValue, gra);
+    conflictLitIndex = -flag;
     if (flag == 0) {
       flag = satisfactory(cnf);
     } else {
@@ -263,28 +263,46 @@ int DPLL(CNF *cnf, variable *literalValue, graph *gra) {
     } else if (flag == 0) {
       return 0;  //表示不可满足
     } else if (flag == -1) {
-      smartBackTrack(cnf, tree, literalValue, gra);
       treeNode = tree->deicdeTreeTail;
-      while (treeNode->left != 1) {
-        backTrack(cnf, treeNode, literalValue);
-        freeNode(tree);
+      if (treeNode->left==0) {
+        smartBackTrack(cnf, tree, literalValue, gra, conflictLitIndex);
         treeNode = tree->deicdeTreeTail;
+        while (treeNode->left != 1) {
+          backTrackGraph(gra,treeNode,tree);
+          backTrack(cnf, treeNode, literalValue);
+          freeNode(tree);
+          treeNode = tree->deicdeTreeTail;
+        }
+        backTrackGraph(gra,treeNode,tree);
+        backTrack(cnf, treeNode, literalValue);
+        treeNode->value = treeNode->value > 0 ? 0 : 1;
+        if (treeNode->value > 0) {
+          literalValue[treeNode->index - 1].value = 1;
+          indexValue = treeNode->index;
+        } else {
+          literalValue[treeNode->index - 1].value = 0;
+          indexValue = -treeNode->index;
+        }
+        treeNode->left = 0;
+        updateGraph(gra,treeNode->index,NULL);
+      }else{
+        backTrackGraph(gra,treeNode,tree);
+        backTrack(cnf, treeNode, literalValue);
+        treeNode->value = treeNode->value > 0 ? 0 : 1;
+        if (treeNode->value > 0) {
+          literalValue[treeNode->index - 1].value = 1;
+          indexValue = treeNode->index;
+        } else {
+          literalValue[treeNode->index - 1].value = 0;
+          indexValue = -treeNode->index;
+        }
+        treeNode->left = 0;
+        updateGraph(gra,treeNode->index,NULL);
       }
-      backTrack(cnf, treeNode, literalValue);
-      treeNode->value = treeNode->value > 0 ? 0 : 1;
-      if (treeNode->value > 0) {
-        literalValue[treeNode->index - 1].value = 1;
-        indexValue = treeNode->index;
-      } else {
-        literalValue[treeNode->index - 1].value = 0;
-        indexValue = -treeNode->index;
-      }
-      treeNode->left = 0;
       continue;
     } else {
       indexValue = selectLiteral(cnf, literalValue);
       updateGraph(gra, abs(indexValue), NULL);
-      printGrapf(gra);
       newNode(tree, indexValue);
       continue;
     }

@@ -1,6 +1,5 @@
 #include "basic.h"
 #include "tree.h"
-
 graph *initGraph(int literalNum) {
   graph *graphA;
   graphA = (graph *)malloc(sizeof(graph));
@@ -45,7 +44,7 @@ int updateGraph(graph *graph, int literalIndex, clause *clauseNode) {
     lit = lit->next;
   }
   return 0;
-}  //仍未检查,大概率没有问题
+}
 
 //生成学习子句
 int clauseLearn(graph *graphA, int index, queue *clauseQue,
@@ -70,15 +69,19 @@ int clauseLearn(graph *graphA, int index, queue *clauseQue,
         visited[indexB - 1] = 1;
         enQueue(&que, indexB);
         if (impliedGraph[indexB - 1].decideNode) {
-          enQueue(clauseQue, indexB);
+          if (literalValue[indexB - 1].value == 1) {
+            enQueue(clauseQue, -indexB);
+          } else {
+            enQueue(clauseQue, indexB);
+          }
         }
       }
       temp = temp->next;
     }
   }
-  enQueue(clauseQue,0);
+  enQueue(clauseQue, 0);
   return 0;
-}  //仍未检查
+}
 
 //添加学习子句，保证子句学习上限为200，当学习到的子句数目大于200时，删除部分子句
 int addClauseLearned(CNF *cnf, queue *que, variable *literalValue) {
@@ -96,7 +99,7 @@ int addClauseLearned(CNF *cnf, queue *que, variable *literalValue) {
     }
     free(tempClause);
   }
-  int num, flag;
+  int num = 1, flag;
   clause *clauseNode = (clause *)malloc(sizeof(clause));
   clauseNode->next = NULL;
   clauseNode->head = (literal *)malloc(sizeof(literal));
@@ -105,11 +108,11 @@ int addClauseLearned(CNF *cnf, queue *que, variable *literalValue) {
   clauseNode->satisfied = 1;
   cnf->clauseLearnedTail->next = clauseNode;  //将子句添加到链表
   cnf->clauseLearnedTail = clauseNode;
-  while (num = deQueue(que)) {
+  while (num) {
+    num = deQueue(que);
     if (num == 0) {
-      clauseNode->satisfied = 1;
-      clauseNode->headb = clauseNode->head->next;
-      clauseNode->tailb = clauseNode->tail;
+      cnf->clauseLearnedTail->headb = cnf->clauseLearnedTail->head->next;
+      cnf->clauseLearnedTail->tailb = cnf->clauseLearnedTail->tail;
       return 0;
     } else {
       addliteral(num, clauseNode, cnf->variableInfo, literalValue);
@@ -117,24 +120,27 @@ int addClauseLearned(CNF *cnf, queue *que, variable *literalValue) {
   }
 }
 
-//当决策树被回溯时，图也需要回溯，将
-int backTrackGraph(graph *gra, decideTreeNode *treeNode) {
+//当决策树被回溯时，图也需要回溯
+int backTrackGraph(graph *gra, decideTreeNode *treeNode, decideTree *tree) {
   int i = 0;
   int index = treeNode->index;
-  gra->graphNode[index - 1].decideNode = 0;  //释放决策点
-  queueNode *tempQueNode = treeNode->que->head;
+  gra->graphNode[index - 1].decideNode = 0;  //释放图的决策点
+  queueNode *tempQueNode = treeNode->que->num == 0? NULL:treeNode->que->head;
   while (tempQueNode) {
     index = tempQueNode->index;
     literalLinked *tempLitLinked =
-        gra->graphNode[index - 1].litLinkedHead;  //释放由该点蕴含的点
+        gra->graphNode[index - 1].litLinkedHead;  //删除掉联系关系
     literalLinked *tofree;
     while (tempLitLinked) {
       tofree = tempLitLinked;
       tempLitLinked = tempLitLinked->next;
       free(tofree);
     }  //释放完成
+    gra->graphNode[index - 1].litLinkedHead = NULL;
     for (i = 0; i < gra->literalNum; i++) {
       tempLitLinked = gra->graphNode[i].litLinkedHead;
+      if(tempLitLinked == NULL||i == index - 1)
+        continue;
       if (tempLitLinked->index == index) {
         gra->graphNode[i].litLinkedHead = tempLitLinked->next;
         free(tempLitLinked);
@@ -152,7 +158,7 @@ int backTrackGraph(graph *gra, decideTreeNode *treeNode) {
     }
     tempQueNode = tempQueNode->next;
   }
-}  //仍未检查
+}
 
 int printGrapf(graph *gra) {
   int i, j;

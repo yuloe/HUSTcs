@@ -14,7 +14,62 @@ int readSudoku(int* sudokuValue) {
   }
   return 0;
 }
+//数独棋盘
+void drawboard(int rank, int* puzzle) {
+  int carrier;
+  int row = 1;
+  int column = 0;
+  printf("|");
+  column += 1;
+  while (column < rank * 2) {
+    if (column % 2)
+      printf("---");
+    else
+      printf("-");
+    column += 1;
+  }
+  printf("|\n");
 
+  while (row < 2 * rank) {
+    column = 0;
+    if (row % 2 == 0) {
+      printf("|");
+      column += 1;
+      while (column < rank * 2) {
+        if (column % 2)
+          printf("---");
+        else
+          printf("|");
+        column += 1;
+      }
+      printf("|\n");
+    } else {
+      while (column <= rank * 2) {
+        if (column % 2 != 0)
+          (carrier = *(puzzle + (row / 2) * rank + column / 2)) != -1
+              ? printf(" %d ", carrier)
+              : printf("   ");
+        else
+          printf("|");
+        column += 1;
+      }
+      putchar('\n');
+    }
+    row += 1;
+  }
+
+  column = 0;
+  printf("|");
+  column += 1;
+  while (column < rank * 2) {
+    if (column % 2)
+      printf("---");
+    else
+      printf("-");
+    column += 1;
+  }
+  printf("|\n");
+}
 //自动生成数独，生成数独终盘，再挖洞。为生成终盘，可以先确定随机确定m行使用dpll解出一组可行的解
 //再使用挖洞生成初盘，初盘中有m*m/4个已知量
 
@@ -214,6 +269,11 @@ int mainSudoku(int m) {
 }
 
 int main() {
-  mainSudoku(2);
+  int m = 4;
+  int sudokuValue[m*m*4];
+  for(int i = 0; i<m*m*4; i++){
+    sudokuValue[i] = 0;
+  }
+  drawboard(2*m,sudokuValue);
   return 0;
 }
