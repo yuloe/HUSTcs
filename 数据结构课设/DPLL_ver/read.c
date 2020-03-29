@@ -1,6 +1,7 @@
 #include "basic.h"
+#include <string.h>
 #include <math.h>
-
+//读取文字
 int addliteral(int num, clause *clause, variableState *variableInfo, variable *literalValue) {
   literal *newNode = (literal *)malloc(sizeof(literal));
   newNode->index = abs(num);
@@ -17,7 +18,7 @@ int addliteral(int num, clause *clause, variableState *variableInfo, variable *l
   literalValue[newNode->index - 1].clauseTail = literalValue[newNode->index - 1].clauseTail->next;
   return 0;
 }
-
+//读取子句
 int addclause(clause *clauseHead, variableState *variableInfo, variable *literalValue) {
   int num, flag;
   clause *clauseNode = (clause *)malloc(sizeof(clause));
@@ -26,6 +27,7 @@ int addclause(clause *clauseHead, variableState *variableInfo, variable *literal
   clauseNode->head->prev = NULL;  //将双向链表的头的prev指针指向NULL
   clauseNode->tail = clauseNode->head;
   clauseHead->next = clauseNode;  //将子句添加到链表
+  clauseHead->literalNum = 0;
   while (scanf("%d", &num) >= 0) {
     if (num == 0) {
       clauseNode->satisfied = 1;
@@ -34,18 +36,20 @@ int addclause(clause *clauseHead, variableState *variableInfo, variable *literal
       return 0;
     } else {
       addliteral(num, clauseNode, variableInfo, literalValue);
+      clauseHead->literalNum++;
     }
   }
   clauseHead->next = NULL;
   return -1;
 }
-
-int addCNF(CNF *cnf, variable **literalValue) {
+//添加CNF范式，
+int addCNF(CNF *cnf, variable **literalValue, char **fileName) {
   clause *tempClause;
-  //char* fileName = (char *)malloc(sizeof(int) * 20);
-  char b,*a;
+  char b,*a,*c;
   a = (char*)malloc(sizeof(char)*20);
+  (*fileName) = (char*)malloc(sizeof(char)*20);
   scanf("%s", a/* fileName */);
+  strcpy((*fileName),a);
   if (freopen(a/* fileName */, "r", stdin) == NULL) {
     fprintf(stderr, "file reopen error\n");
     return -1;

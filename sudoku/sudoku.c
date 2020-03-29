@@ -2,18 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//读取数独初盘,数独初盘以
-//版本1，从文件中读取初盘
-int readSudoku(int* sudokuValue) {
-  if (freopen("initSudoku.txt", "r", stdin) == NULL) {
-    fprintf(stderr, "file open error!\n");
-  }
-  int index, value;
-  while (scanf("%d:%d", &index, &value) != -1) {
-    sudokuValue[index - 1] = value;
-  }
-  return 0;
-}
 //数独棋盘
 void drawboard(int rank, int* puzzle) {
   int carrier;
@@ -69,19 +57,6 @@ void drawboard(int rank, int* puzzle) {
     column += 1;
   }
   printf("|\n");
-}
-//自动生成数独，生成数独终盘，再挖洞。为生成终盘，可以先确定随机确定m行使用dpll解出一组可行的解
-//再使用挖洞生成初盘，初盘中有m*m/4个已知量
-
-//打印数独，完成之后的样子
-int printSudoku(int m, int* sudokuValue) {
-  int i, j;
-  for (i = 0; i < m; i++) {
-    for (j = 0; j < m; j++) {
-      printf("%d ", sudokuValue[i * m + j]);
-    }
-    printf("\n");
-  }
 }
 
 //不存在连续的三个0或者三个1
@@ -182,7 +157,7 @@ int constraintThree(int m) {
   int a[2 * m], b[2 * m], c[2 * m], d;
   int count;
   // column
-  int variable = m * m + 1;
+  int variable = 4 * m * m + 1;
   for (i = 1; i <= 2 * m; i++) {
     for (j = i + 1; j <= 2 * m; j++) {
       for (count = 0; count < 2 * m; count++) {
@@ -191,17 +166,20 @@ int constraintThree(int m) {
         c[count] = variable + 4 * m + count;
       }
       d = variable + 6 * m;
-      for (row = 0; row <= 7; row++) {
-        printf("-%d %d %d 0\n", a[row], 2 * m * row + i, 2 * m * row + j);
-        printf("%d -%d 0\n", a[row], 2 * m * row + i);
-        printf("%d -%d 0\n", a[row], 2 * m * row + j);
-        printf("-%d -%d -%d 0\n", b[row], 2 * m * row + i, 2 * m * row + j);
-        printf("%d %d 0\n", b[row], 2 * m * row + i);
-        printf("%d %d 0\n", b[row], 2 * m * row + j);
+      for (row = 0; row <= 2 * m - 1; row++) {
+        printf("%d -%d -%d 0\n", a[row], 2 * m * row + i, 2 * m * row + j);
+        printf("-%d %d 0\n", a[row], 2 * m * row + i);
+        printf("-%d %d 0\n", a[row], 2 * m * row + j);
+        printf("%d %d %d 0\n", b[row], 2 * m * row + i, 2 * m * row + j);
+        printf("-%d -%d 0\n", b[row], 2 * m * row + i);
+        printf("-%d -%d 0\n", b[row], 2 * m * row + j);
+        printf("-%d %d %d 0\n", c[row],a[row], b[row]);
+        printf("%d -%d 0\n", c[row], a[row]);
+        printf("%d -%d 0\n", c[row], b[row]);
       }
       printf("%d ", -d);
       for (count = 0; count < 2 * m; count++) {
-        printf("%d ", c[count]);
+        printf("-%d ", c[count]);
       }
       printf("0\n");
       for (count = 0; count < 2 * m; count++) {
@@ -211,8 +189,8 @@ int constraintThree(int m) {
     }
   }
   // row
-  for (j = 0; j < 2 * m; j++) {
-    for (i = j + 1; i <= 2 * m; i++) {
+  for (j = 0; j <= 2 * m - 1; j++) {
+    for (i = j + 1; i <= 2 * m - 1; i++) {
       for (count = 0; count < 2 * m; count++) {
         a[count] = variable + count;
         b[count] = variable + 2 * m + count;
@@ -220,18 +198,21 @@ int constraintThree(int m) {
       }
       d = variable + 6 * m;
       for (column = 1; column <= 2 * m; column++) {
-        printf("-%d %d %d 0\n", a[column - 1], 2 * m * i + column,
+        printf("%d -%d -%d 0\n", a[column - 1], 2 * m * i + column,
                2 * m * j + column);
-        printf("%d -%d 0\n", a[column - 1], 2 * m * column + i);
-        printf("%d -%d 0\n", a[column - 1], 2 * m * column + j);
-        printf("-%d -%d -%d 0\n", b[column - 1], 2 * m * i + column,
+        printf("-%d %d 0\n", a[column - 1], 2 * m * i + column);
+        printf("-%d %d 0\n", a[column - 1], 2 * m * j + column);
+        printf("%d %d %d 0\n", b[column - 1], 2 * m * i + column,
                2 * m * j + column);
-        printf("%d %d 0\n", b[column - 1], 2 * m * i + column);
-        printf("%d %d 0\n", b[column - 1], 2 * m * j + column);
+        printf("-%d -%d 0\n", b[column - 1], 2 * m * i + column);
+        printf("-%d -%d 0\n", b[column - 1], 2 * m * j + column);
+        printf("-%d %d %d 0\n", c[column - 1],a[column - 1], b[column - 1]);
+        printf("%d -%d 0\n", c[column - 1], a[column - 1]);
+        printf("%d -%d 0\n", c[column - 1], b[column - 1]);
       }
       printf("%d ", -d);
       for (count = 0; count < 2 * m; count++) {
-        printf("%d ", c[count]);
+        printf("-%d ", c[count]);
       }
       printf("0\n");
       for (count = 0; count < 2 * m; count++) {
@@ -244,36 +225,35 @@ int constraintThree(int m) {
 
 //打印cnf文件，将数独转化为cnf文件
 int transfer(int* sudokuValue, int m) {
+  freopen("sudoku.cnf", "w+", stdout);
   int i;
-  for (i = 0; i < 2 * 2 * m * m; i++) {
-    if (sudokuValue[i] != -1) {
-      if (sudokuValue[i] == 1) {
-        printf("%d 0\n", i + 1);
-      } else {
-        printf("-%d 0\n", i + 1);
-      }
-    }
-  }
+  // for (i = 0; i < 2 * 2 * m * m; i++) {
+  //   if (sudokuValue[i] != -1) {
+  //     if (sudokuValue[i] == 1) {
+  //       printf("%d 0\n", i + 1);
+  //     } else {
+  //       printf("-%d 0\n", i + 1);
+  //     }
+  //   }
+  // }
   constraintOne(m);
   constraintTwo(m);
   constraintThree(m);
-}
-
-int mainSudoku(int m) {
-  FILE* fileName = freopen("sudoku.cnf", "w+", stdout);
-  int sudokuValue[2 * 2 * m * m];
-  transfer(sudokuValue, m);
   fclose(stdout);
   freopen("CON", "w", stdout);
   return 0;
 }
 
+int mainSudoku(int m,int *sudokuValue) {
+  transfer(sudokuValue, m);
+  return 0;
+}
+
 int main() {
-  int m = 4;
+  int m = 3;
   int sudokuValue[m*m*4];
-  for(int i = 0; i<m*m*4; i++){
-    sudokuValue[i] = 0;
-  }
+  freopen("CON","r",stdin);
+  mainSudoku(3, sudokuValue);
   drawboard(2*m,sudokuValue);
   return 0;
 }

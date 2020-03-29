@@ -8,6 +8,7 @@
 int write(CNF *cnf, variable *literalIndex, int satisfied, double total_t) {
   FILE *file = fopen("answer.res", "w+");
   if (satisfied) {
+    printf("s 1\nv ");
     int i = 0;
     for (i = 0; i < cnf->literalNum; i++) {
       if (literalIndex[i].value != -1) {
@@ -21,8 +22,8 @@ int write(CNF *cnf, variable *literalIndex, int satisfied, double total_t) {
       }
     }
   }else{
-    fprintf(file,"the cnf is unsatisfied\n");
+    fprintf(file,"s 0\n");
   }
-  fprintf(file, "\n%lfms", total_t);
+  fprintf(file, "\nt %lfms", total_t);
   return 0;
 }
